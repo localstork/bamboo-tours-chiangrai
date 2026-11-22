@@ -1,0 +1,3 @@
+# Temporary preview address. The live site is https://bambootourschiangrai.com
+User-agent: *
+Disallow: /
