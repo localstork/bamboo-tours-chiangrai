@@ -253,11 +253,21 @@
       .join("");
   }
   const lb = $("#lightbox");
+  let lbToken = 0;
   function closeLightbox() { if (lb) lb.classList.remove("open"); }
   document.addEventListener("click", (e) => {
     const it = e.target.closest(".gal-item");
     if (it && lb) {
-      $("#lightbox-img").src = it.dataset.full;
+      /* The tile now holds a 520px thumb, so opening the pop-up used to wait for
+         the full photo to download - about a second. Show the thumb at once
+         (it is already in cache) and swap in the full one when it arrives. */
+      const lbImg = $("#lightbox-img");
+      const tileImg = it.querySelector("img");
+      const token = ++lbToken;
+      lbImg.src = (tileImg && tileImg.currentSrc) || tileImg.src || it.dataset.full;
+      const fullImg = new Image();
+      fullImg.onload = function () { if (token === lbToken) lbImg.src = fullImg.src; };
+      fullImg.src = it.dataset.full;
       lb.classList.add("open");
     } else if (lb && (e.target === lb || e.target.closest("#lightbox .modal-x"))) {
       closeLightbox();
@@ -518,16 +528,29 @@
     const slides = HERO_SLIDES.map((s, i) => {
       const im = document.createElement("img");
       im.className = "hero-slide" + (i === 0 ? " is-active" : "");
-      im.src = BASE && s.src.indexOf("http") !== 0 ? BASE + s.src : s.src;
+      /* Every slide sits at inset:0 and is only moved by a CSS transform, so the
+         browser counts all of them as on-screen and loading="lazy" does nothing -
+         all 11 photos used to download before the page had finished painting.
+         Only the first one gets a src now; the rest are fetched just before they
+         are needed. First paint drops from ~3.6 MB to ~0.4 MB. */
+      var _u = BASE && s.src.indexOf("http") !== 0 ? BASE + s.src : s.src;
+      if (i === 0) { im.src = _u; } else { im.dataset.src = _u; }
       im.style.objectPosition = "50% " + (s.focus == null ? 50 : s.focus) + "%";
       im.alt = i === 0 ? esc(s.caption || "") : "";
       im.setAttribute("aria-hidden", i === 0 ? "false" : "true");
-      if (i > 1) im.loading = "lazy";
       if (i === 0) im.setAttribute("fetchpriority", "high");
       im.addEventListener("error", function () { dropSlide(im); });
       heroBox.appendChild(im);
       return im;
     });
+
+    /* give a slide its photo the moment we know it is about to be shown */
+    const ensureSlide = (i) => {
+      const im = slides[i];
+      if (im && im.dataset.src) { im.src = im.dataset.src; delete im.dataset.src; }
+    };
+    /* once the first screen has painted, quietly fetch the second photo */
+    window.addEventListener("load", () => setTimeout(() => ensureSlide(1), 600));
 
     // if a photo cannot be loaded, quietly take it out of the rotation
     function dropSlide(im) {
@@ -559,6 +582,7 @@
 
       // park the incoming slide on the right with no animation, then slide it in
       inn.classList.add("no-anim");
+      ensureSlide(next);
       inn.classList.remove("is-active", "is-out");
       void inn.offsetWidth;                 // force the browser to apply it now
       inn.classList.remove("no-anim");
@@ -579,8 +603,7 @@
       cur = next;
 
       // warm up the one after next so it is ready when its turn comes
-      const after = slides[(next + 1) % slides.length];
-      if (after && after.loading === "lazy") after.loading = "eager";
+      ensureSlide((next + 1) % slides.length);
     }
 
     function start() { stop(); timer = setInterval(function () { show((cur + 1) % slides.length); }, typeof HERO_INTERVAL_MS !== "undefined" ? HERO_INTERVAL_MS : 4000); }
