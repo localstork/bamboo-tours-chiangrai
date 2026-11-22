@@ -114,13 +114,16 @@
     (x) => (TOUR_INDEX[x.code] = x)
   );
 
+  /* the two cards above the fold should not wait for a lazy trigger */
+  let cardIndex = 0;
   function cardHTML(raw) {
     const d = localize(raw);
     const low = Math.min.apply(null, d.prices.map((x) => x.rate));
     return `
       <article class="tour-card reveal">
         <div class="tour-media">
-          <img src="${BASE}${d.image}" alt="${esc(d.title)}" loading="lazy">
+          <img src="${BASE}${d.image}" alt="${esc(d.title)}"
+               ${cardIndex++ < 2 ? 'fetchpriority="high"' : 'loading="lazy"'}>
           <span class="tour-code">${esc(d.code)}</span>
           ${d.badge ? `<span class="tour-flag">${esc(d.badge)}</span>` : ""}
         </div>
@@ -751,7 +754,11 @@
   /* ---------- Reveal on scroll ---------- */
   const io = new IntersectionObserver(
     (entries) => entries.forEach((e) => e.isIntersecting && (e.target.classList.add("in"), io.unobserve(e.target))),
-    { rootMargin: "0px 0px -60px 0px" }
+    /* Start the fade 300px BEFORE the element reaches the screen, so by the time
+       the viewer scrolls to it the photo is already in place. The old value
+       (-60px) waited until it was 60px INSIDE the screen, which on a phone felt
+       like the picture was loading slowly when it had in fact already arrived. */
+    { rootMargin: "100px 0px 450px 0px" }
   );
   $$(".reveal").forEach((el) => io.observe(el));
 
