@@ -230,6 +230,11 @@
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeDetail(); closeLightbox(); } });
 
   /* ---------- Gallery ---------- */
+
+  /* Grid tiles are 190-400px wide but the photos are 1200px. Each gallery and
+     cooking photo has a 520px copy in a thumbs/ folder beside it; the tile uses
+     that and the click-to-enlarge pop-up still loads the full-size original. */
+  const thumbSrc = (src) => src.replace(/\/(gallery|cooking)\/([^/]+)$/, "/$1/thumbs/$2");
   const galHost = $("#gallery-grid");
   if (galHost && typeof GALLERY !== "undefined") {
     const limit = parseInt(galHost.dataset.limit || "0", 10);
@@ -241,7 +246,7 @@
     galHost.innerHTML = shown
       .map(
         (g) => `<figure class="gal-item reveal" data-full="${g.src}">
-            <img src="${g.src}" alt="${esc(g.caption)}" loading="lazy">
+            <img src="${thumbSrc(g.src)}" alt="${esc(g.caption)}" loading="lazy">
             <figcaption class="gal-cap">${esc(g.caption)}</figcaption>
           </figure>`
       )
@@ -265,7 +270,7 @@
     cookHost.innerHTML = COOKING_GALLERY.map(
       (g) =>
         `<figure class="gal-item reveal" data-full="${BASE}${g.src}">
-           <img src="${BASE}${g.src}" alt="${esc(g.caption)}" loading="lazy">
+           <img src="${thumbSrc(BASE + g.src)}" alt="${esc(g.caption)}" loading="lazy">
            <figcaption class="gal-cap">${esc(g.caption)}</figcaption>
          </figure>`
     ).join("");
