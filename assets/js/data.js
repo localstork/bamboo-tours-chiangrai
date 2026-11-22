@@ -1011,7 +1011,7 @@ const TEAM = [
     name: "Khai",
     role: "Senior Trekking Guide",
     langs: "Thai, English",
-    skills: "Trekking \u00b7 Jungle cooking \u00b7 Waterfall routes",
+    skills: "Trekking \u00b7 Bamboo rafting \u00b7 Jungle cooking \u00b7 Waterfall routes",
     bio: "Khai is Kwan's younger brother, and Bamboo Tours has been the two of them from the start. "
        + "He speaks excellent English, so guests with a lot of questions usually end up walking next "
        + "to him, and he leads most of the trekking days \u2014 calm, patient, and very hard to tire out.",
